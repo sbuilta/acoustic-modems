@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Template Modem Parameters",
+  "type": "object",
+  "properties": {
+    "sample_rate": {
+      "type": "integer",
+      "minimum": 8000,
+      "maximum": 192000,
+      "default": 48000,
+      "description": "Audio sample rate for modulation/demodulation."
+    },
+    "carrier_frequency": {
+      "type": "number",
+      "minimum": 500,
+      "maximum": 20000,
+      "default": 12000,
+      "description": "Center frequency of the carrier tone in Hz."
+    },
+    "symbol_rate": {
+      "type": "number",
+      "minimum": 10,
+      "maximum": 2000,
+      "default": 100,
+      "description": "Symbol rate in symbols per second."
+    }
+  },
+  "required": [
+    "sample_rate"
+  ],
+  "additionalProperties": false
+}

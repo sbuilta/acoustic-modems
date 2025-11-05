@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BFSK Modem Parameters",
+  "type": "object",
+  "properties": {
+    "sample_rate": {
+      "type": "integer",
+      "default": 48000,
+      "minimum": 16000,
+      "maximum": 192000,
+      "description": "PCM sample rate in Hz used for modulation and demodulation."
+    },
+    "bitrate": {
+      "type": "number",
+      "default": 120.0,
+      "minimum": 10.0,
+      "maximum": 2000.0,
+      "description": "Symbol rate in bits per second."
+    },
+    "freq0": {
+      "type": "number",
+      "default": 11000.0,
+      "minimum": 500.0,
+      "maximum": 20000.0,
+      "description": "Carrier frequency in Hz for logical 0."
+    },
+    "freq1": {
+      "type": "number",
+      "default": 14000.0,
+      "minimum": 500.0,
+      "maximum": 20000.0,
+      "description": "Carrier frequency in Hz for logical 1."
+    },
+    "amplitude": {
+      "type": "number",
+      "default": 0.8,
+      "minimum": 0.1,
+      "maximum": 1.0,
+      "description": "Peak amplitude of the generated waveform (0-1)."
+    },
+    "preamble_bits": {
+      "type": "string",
+      "default": "1010101011110000",
+      "pattern": "^[01]+$",
+      "description": "Bit pattern prepended to each packet for synchronization."
+    }
+  },
+  "required": [
+    "sample_rate",
+    "bitrate",
+    "freq0",
+    "freq1"
+  ],
+  "additionalProperties": false
+}

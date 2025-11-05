@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "acoustic-modem-workbench"
+version = "0.1.0"
+description = "Workbench for prototyping acoustic modem pipelines."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "Acoustic Modem Workbench Team"}]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "sounddevice>=0.4",
+    "soundfile>=0.12",
+    "pydantic>=2.5",
+    "jsonschema>=4.19",
+    "PySide6>=6.6",
+    "pyqtgraph>=0.13",
+    "loguru>=0.7",
+    "rich>=13.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.9",
+    "ruff>=0.1.6",
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "mypy>=1.6",
+    "types-jsonschema>=4.19",
+    "types-PySide6",
+]
+
+[project.scripts]
+amw-gui = "amw.gui.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "B",
+    "UP",
+    "ANN",
+]
+ignore = [
+    "ANN101",
+    "ANN102",
+]
+
+[tool.mypy]
+python_version = "3.11"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unused_configs = true
+namespace_packages = true
+show_error_codes = true
+mypy_path = "src"
+exclude = "(tests/data/|scripts/)"
+
+[tool.pytest.ini_options]
+addopts = "-q --cov=amw --cov-branch --cov-report=term-missing"
+testpaths = ["tests"]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]

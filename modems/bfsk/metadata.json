@@ -1,0 +1,8 @@
+{
+  "name": "BFSK Reference",
+  "version": "0.1.0",
+  "sample_rate": 48000,
+  "description": "Binary FSK modem for baseline testing.",
+  "author": "Acoustic Modem Workbench",
+  "license": "MIT"
+}

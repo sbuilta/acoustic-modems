@@ -1,0 +1,8 @@
+{
+  "sample_rate": 48000,
+  "bitrate": 120.0,
+  "freq0": 11000.0,
+  "freq1": 14000.0,
+  "amplitude": 0.8,
+  "preamble_bits": "1010101011110000"
+}

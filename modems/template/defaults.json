@@ -1,0 +1,5 @@
+{
+  "sample_rate": 48000,
+  "carrier_frequency": 12000,
+  "symbol_rate": 100
+}
