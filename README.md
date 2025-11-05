@@ -8,6 +8,7 @@ Acoustic Modem Workbench is a research-oriented desktop application for building
 - **Plugin architecture** – Drop new modem implementations in `modems/<name>/` with shared schema contracts.
 - **GUI instrumentation** – Qt-based panels for modem selection, payload authoring, device setup, and debug tabs.
 - **Audio abstraction** – A thin wrapper over `sounddevice` with graceful fallbacks for environments without audio hardware.
+- **Forward error correction** – Reusable block/repetition codecs and interleaving utilities tuned for noisy acoustic links.
 - **Extensive tests** – Unit suites cover plugins, pipeline orchestration, GUI scaffolding, and audio utilities with ≥85 % coverage.
 
 ## Quick Start (Windows 11)
@@ -89,6 +90,13 @@ scripts/        # helper scripts (e.g., updating golden vectors)
 5. Add unit tests that load the schema, encode a sample payload, and decode the simulated waveform.
 
 Plugins are discovered automatically via `PluginRegistry`; surface meaningful metadata so the GUI can populate selectors and device defaults.
+
+## Forward Error Correction
+
+- Shared helpers live in `src/amw/pipeline/fec.py` with a no-op adapter, an odd-order repetition code, and a (7,4) Hamming block code.
+- Columnar interleaving is available to spread burst errors before decoding; depth is configurable per modem.
+- The reference `BFSK` modem exposes these controls under the `fec` object in `schema.json`, allowing `none`, `repetition`, or `hamming74` plus optional interleaving.
+- When a FEC scheme is selected the modem transmits a 32-bit payload-length header, enabling the decoder to strip padding and report correction metrics.
 
 ## Testing Strategy
 

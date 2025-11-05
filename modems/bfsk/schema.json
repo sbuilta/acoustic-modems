@@ -43,6 +43,45 @@
       "default": "1010101011110000",
       "pattern": "^[01]+$",
       "description": "Bit pattern prepended to each packet for synchronization."
+    },
+    "fec": {
+      "type": "object",
+      "description": "Forward error correction settings for payload bits.",
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "enum": [
+            "none",
+            "repetition",
+            "hamming74"
+          ],
+          "default": "none",
+          "description": "FEC scheme applied to payload bits prior to modulation."
+        },
+        "repetition_factor": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 15,
+          "description": "Number of repeated symbols for the repetition code (odd values recommended)."
+        },
+        "interleave_depth": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 1,
+          "maximum": 32,
+          "description": "Depth of the columnar interleaver applied after FEC encoding."
+        }
+      },
+      "required": [
+        "scheme"
+      ],
+      "additionalProperties": false,
+      "default": {
+        "scheme": "none",
+        "repetition_factor": 3,
+        "interleave_depth": 1
+      }
     }
   },
   "required": [

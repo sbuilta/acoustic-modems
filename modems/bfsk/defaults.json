@@ -4,5 +4,10 @@
   "freq0": 11000.0,
   "freq1": 14000.0,
   "amplitude": 0.8,
-  "preamble_bits": "1010101011110000"
+  "preamble_bits": "1010101011110000",
+  "fec": {
+    "scheme": "none",
+    "repetition_factor": 3,
+    "interleave_depth": 1
+  }
 }
