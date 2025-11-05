@@ -31,7 +31,7 @@ dev = [
     "pytest-cov>=4.1",
     "mypy>=1.6",
     "types-jsonschema>=4.19",
-    "types-PySide6",
+    "PySide6-stubs>=6.4",
 ]
 
 [project.scripts]
