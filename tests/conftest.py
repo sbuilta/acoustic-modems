@@ -6,6 +6,10 @@ from collections.abc import Generator
 
 import pytest
 
+from ._qt_stub import ensure_qt_module
+
+ensure_qt_module()
+
 
 @pytest.fixture(scope="session")
 def qt_app() -> Generator[object, None, None]:

@@ -2,35 +2,42 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable, Iterable, Sequence
 from typing import Any
 
+_TRUTHY = {"1", "true", "yes", "on"}
+_use_stub = (os.getenv("AMW_FORCE_QT_STUBS") or "").lower() in _TRUTHY
 
-try:  # pragma: no cover - exercised implicitly when Qt is available
-    from PySide6.QtCore import Qt  # type: ignore
-    from PySide6.QtWidgets import (  # type: ignore
-        QApplication,
-        QFileDialog,
-        QButtonGroup,
-        QCheckBox,
-        QComboBox,
-        QFormLayout,
-        QGridLayout,
-        QGroupBox,
-        QHBoxLayout,
-        QLabel,
-        QLineEdit,
-        QMainWindow,
-        QPushButton,
-        QRadioButton,
-        QSpinBox,
-        QSplitter,
-        QTabWidget,
-        QTextEdit,
-        QVBoxLayout,
-        QWidget,
-    )
-except Exception:  # pragma: no cover - used during headless tests
+if not _use_stub:
+    try:  # pragma: no cover - exercised implicitly when Qt is available
+        from PySide6.QtCore import Qt  # type: ignore
+        from PySide6.QtWidgets import (  # type: ignore
+            QApplication,
+            QFileDialog,
+            QButtonGroup,
+            QCheckBox,
+            QComboBox,
+            QFormLayout,
+            QGridLayout,
+            QGroupBox,
+            QHBoxLayout,
+            QLabel,
+            QLineEdit,
+            QMainWindow,
+            QPushButton,
+            QRadioButton,
+            QSpinBox,
+            QSplitter,
+            QTabWidget,
+            QTextEdit,
+            QVBoxLayout,
+            QWidget,
+        )
+    except Exception:  # pragma: no cover - used during headless tests
+        _use_stub = True
+
+if _use_stub:
 
     class _Signal:
         def __init__(self) -> None:
@@ -322,9 +329,11 @@ except Exception:  # pragma: no cover - used during headless tests
             Horizontal = 0
             Vertical = 1
 
+if _use_stub:
     __all__ = [
         "QApplication",
         "QButtonGroup",
+        "QCheckBox",
         "QComboBox",
         "QFormLayout",
         "QGridLayout",
@@ -341,31 +350,30 @@ except Exception:  # pragma: no cover - used during headless tests
         "QTextEdit",
         "QVBoxLayout",
         "QWidget",
-        "QCheckBox",
         "QFileDialog",
         "Qt",
     ]
-
-__all__ = [
-    "QApplication",
-    "QButtonGroup",
-    "QCheckBox",
-    "QComboBox",
-    "QFormLayout",
-    "QGridLayout",
-    "QGroupBox",
-    "QHBoxLayout",
-    "QLabel",
-    "QLineEdit",
-    "QMainWindow",
-    "QPushButton",
-    "QRadioButton",
-    "QSpinBox",
-    "QSplitter",
-    "QTabWidget",
-    "QTextEdit",
-    "QVBoxLayout",
-    "QWidget",
-    "QFileDialog",
-    "Qt",
-]
+else:
+    __all__ = [
+        "QApplication",
+        "QButtonGroup",
+        "QCheckBox",
+        "QComboBox",
+        "QFormLayout",
+        "QGridLayout",
+        "QGroupBox",
+        "QHBoxLayout",
+        "QLabel",
+        "QLineEdit",
+        "QMainWindow",
+        "QPushButton",
+        "QRadioButton",
+        "QSpinBox",
+        "QSplitter",
+        "QTabWidget",
+        "QTextEdit",
+        "QVBoxLayout",
+        "QWidget",
+        "QFileDialog",
+        "Qt",
+    ]

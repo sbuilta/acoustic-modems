@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import pytest
 
+from tests._qt_stub import ensure_qt_module
+
+ensure_qt_module()
+
 pytest.importorskip("PySide6")
 
 from amw.gui.panels import AudioPanel, DebugPanel, ModemPanel, PayloadPanel, PipelinePanel  # noqa: E402
