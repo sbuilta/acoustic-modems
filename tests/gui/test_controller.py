@@ -5,8 +5,11 @@ from types import SimpleNamespace
 
 import numpy as np
 
+import amw.gui.controller as controller_module
+
 from amw.gui.controller import WorkbenchController
 from amw.gui.main_window import MainWindow
+from amw.gui.panels.pipeline_panel import AudioState
 from amw.io.audio import RecordingResult
 from amw.pipeline.artifacts import PipelineArtifacts, PipelineState
 from amw.plugins.contract import DecodeOutput, EncodeOutput, PluginHandle, PluginMetadata
@@ -102,3 +105,26 @@ def test_build_button_invokes_pipeline(qt_app: object) -> None:
     assert plugin_name == registry.handle.name
     assert params == registry.handle.default_params
     assert payload_spec.mode.name == "TEXT"
+
+
+def test_controller_flushes_qt_events_after_audio_state_update(qt_app: object, monkeypatch: object) -> None:
+    window = MainWindow()
+    registry = DummyRegistry()
+    controller = WorkbenchController(window, registry=registry, audio_service=DummyAudioService(), orchestrator=DummyOrchestrator())
+
+    calls: list[int] = []
+
+    class DummyApp:
+        def processEvents(self) -> None:
+            calls.append(1)
+
+    dummy_app = DummyApp()
+
+    def fake_instance(_: type[object]) -> DummyApp:
+        return dummy_app
+
+    monkeypatch.setattr(controller_module.QApplication, "instance", classmethod(fake_instance))
+
+    controller._set_audio_state(AudioState.RECORDING)
+
+    assert calls, "controller should process Qt events to refresh indicators"

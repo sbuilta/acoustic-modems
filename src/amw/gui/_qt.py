@@ -342,6 +342,9 @@ if _use_stub:
             self.argv = list(argv)
             type(self)._instance = self
 
+        def processEvents(self) -> None:
+            return
+
         def exec(self) -> int:  # noqa: A003 - match Qt API
             return 0
 

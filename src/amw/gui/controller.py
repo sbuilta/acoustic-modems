@@ -7,6 +7,7 @@ from typing import Any
 
 from loguru import logger
 
+from amw.gui._qt import QApplication
 from amw.gui.main_window import MainWindow
 from amw.gui.panels.pipeline_panel import AudioState
 from amw.io.audio import AudioService
@@ -203,3 +204,14 @@ class WorkbenchController:
     def _set_audio_state(self, state: AudioState) -> None:
         """Proxy audio state updates to the pipeline panel indicator."""
         self.window.pipeline_panel.set_audio_state(state)
+        self._flush_ui_events()
+
+    @staticmethod
+    def _flush_ui_events() -> None:
+        """Allow Qt to repaint indicators before long-running audio operations."""
+        app = QApplication.instance()
+        if app is None:
+            return
+        process_events = getattr(app, "processEvents", None)
+        if callable(process_events):
+            process_events()
