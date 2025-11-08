@@ -69,3 +69,25 @@ class AudioService:
             samples = recording.reshape(-1)
             metadata = {"channels": channels, "triggered": use_trigger}
         return RecordingResult(samples=samples, sample_rate=sample_rate, metadata=metadata)
+
+    def list_devices(self) -> tuple[list[str], list[str]]:
+        """Return simple string lists of playback and capture devices."""
+        default_outputs = ["System Default"]
+        default_inputs = ["System Default"]
+        if sd is None:
+            return default_outputs, default_inputs
+        try:
+            devices = sd.query_devices()
+        except Exception as exc:  # pragma: no cover - depends on host audio stack
+            logger.warning("Audio device enumeration failed: %s", exc)
+            return default_outputs, default_inputs
+
+        outputs = list(default_outputs)
+        inputs = list(default_inputs)
+        for index, info in enumerate(devices):
+            name = info.get("name") or f"Device {index}"
+            if info.get("max_output_channels", 0):
+                outputs.append(f"{name} (#{index})")
+            if info.get("max_input_channels", 0):
+                inputs.append(f"{name} (#{index})")
+        return outputs, inputs

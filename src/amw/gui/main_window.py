@@ -23,14 +23,20 @@ class MainWindow(QMainWindow):
         control_layout.setContentsMargins(12, 12, 12, 12)
         control_layout.setSpacing(12)
 
-        control_layout.addWidget(ModemPanel())
-        control_layout.addWidget(PayloadPanel())
-        control_layout.addWidget(AudioPanel())
-        control_layout.addWidget(PipelinePanel())
+        self.modem_panel = ModemPanel()
+        self.payload_panel = PayloadPanel()
+        self.audio_panel = AudioPanel()
+        self.pipeline_panel = PipelinePanel()
+        self.debug_panel = DebugPanel()
+
+        control_layout.addWidget(self.modem_panel)
+        control_layout.addWidget(self.payload_panel)
+        control_layout.addWidget(self.audio_panel)
+        control_layout.addWidget(self.pipeline_panel)
         control_layout.addStretch(1)
 
         splitter.addWidget(control_widget)
-        splitter.addWidget(DebugPanel())
+        splitter.addWidget(self.debug_panel)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
 

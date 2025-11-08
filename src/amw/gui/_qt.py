@@ -105,18 +105,48 @@ if _use_stub:
             super().__init__()
             self._items: list[str] = []
             self._current_index = -1
+            self.currentIndexChanged = _Signal()
+
+        def addItem(self, item: str) -> None:
+            self._items.append(str(item))
+            if self._current_index == -1:
+                self._set_index(0)
 
         def addItems(self, items: Iterable[str]) -> None:
-            self._items.extend(list(items))
-            if self._items and self._current_index == -1:
-                self._current_index = 0
+            for item in items:
+                self.addItem(str(item))
 
         def clear(self) -> None:
+            previous = self._current_index
             self._items.clear()
             self._current_index = -1
+            if previous != -1:
+                self.currentIndexChanged.emit(-1)
 
         def count(self) -> int:
             return len(self._items)
+
+        def currentText(self) -> str:
+            if 0 <= self._current_index < len(self._items):
+                return self._items[self._current_index]
+            return ""
+
+        def currentIndex(self) -> int:
+            return self._current_index
+
+        def setCurrentIndex(self, index: int) -> None:
+            self._set_index(index)
+
+        def _set_index(self, index: int) -> None:
+            if not self._items:
+                index = -1
+            else:
+                index = max(0, min(index, len(self._items) - 1))
+            if index == self._current_index:
+                return
+            self._current_index = index
+            self.currentIndexChanged.emit(index)
+
 
     class QSpinBox(QWidget):
         def __init__(self) -> None:
