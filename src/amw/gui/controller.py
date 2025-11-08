@@ -136,6 +136,10 @@ class WorkbenchController:
             return
         finally:
             self._set_audio_state(AudioState.AVAILABLE)
+        waveform = self._orchestrator.artifacts.tx_waveform
+        sample_count = int(waveform.size) if waveform is not None else 0
+        plugin_rate = self._current_plugin.sample_rate if self._current_plugin else None
+        self.window.debug_panel.record_transmit(sample_count, plugin_rate)
         self._notify_info("Transmit complete")
 
     def _handle_record(self, *, use_trigger: bool) -> None:
@@ -149,6 +153,12 @@ class WorkbenchController:
             return
         finally:
             self._set_audio_state(AudioState.AVAILABLE)
+        self.window.debug_panel.record_receive(
+            int(result.samples.size),
+            result.sample_rate,
+            triggered=use_trigger,
+            metadata=result.metadata,
+        )
         self.window.debug_panel.update_constellation(result.samples, result.sample_rate)
         trigger_msg = " (trigger)" if use_trigger else ""
         self._notify_info(f"Recorded {result.samples.size} samples{trigger_msg}")
@@ -167,8 +177,14 @@ class WorkbenchController:
             result = self._orchestrator.decode()
         except Exception as exc:
             logger.exception("Decode failed: %s", exc)
+            self.window.debug_panel.record_decode_attempt(success=False, error=str(exc))
             self._notify_error(f"Decode failed: {exc}")
             return
+        self.window.debug_panel.record_decode_attempt(
+            success=True,
+            payload_bytes=len(result.payload),
+            metrics=result.metrics,
+        )
         self._notify_info(f"Decoded payload ({len(result.payload)} bytes)")
 
     def _refresh_audio_devices(self) -> None:
@@ -197,9 +213,11 @@ class WorkbenchController:
 
     def _notify_info(self, message: str) -> None:
         logger.info(message)
+        self.window.debug_panel.log_status("info", message)
 
     def _notify_error(self, message: str) -> None:
         logger.error(message)
+        self.window.debug_panel.log_status("error", message)
 
     def _set_audio_state(self, state: AudioState) -> None:
         """Proxy audio state updates to the pipeline panel indicator."""

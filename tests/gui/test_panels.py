@@ -52,3 +52,23 @@ def test_debug_panel_updates_constellation_status(qt_app: object) -> None:
     samples = np.linspace(-1.0, 1.0, num=32, dtype=np.float32)
     panel.update_constellation(samples, 48_000)
     assert "Showing" in panel.constellation.status_text()
+
+
+def test_metrics_view_tracks_status_and_tx_rx(qt_app: object) -> None:
+    panel = DebugPanel()
+    panel.log_status("info", "Build ready")
+    panel.record_transmit(1024, 48_000)
+    panel.record_receive(2048, 48_000, triggered=True, metadata={"channels": 1})
+    assert "Build ready" in panel.metrics.status_text()
+    assert "1 event" in panel.metrics.tx_summary()
+    assert "triggered" in panel.metrics.rx_summary()
+
+
+def test_metrics_view_tracks_decode_attempts(qt_app: object) -> None:
+    panel = DebugPanel()
+    panel.record_decode_attempt(success=True, payload_bytes=8, metrics={"ber": 0.1})
+    assert "1 attempt" in panel.metrics.decode_summary()
+    assert "ber" in panel.metrics.decode_metrics_text()
+    panel.record_decode_attempt(success=False, error="CRC mismatch")
+    assert "failure" in panel.metrics.decode_summary()
+    assert "CRC mismatch" in panel.metrics.decode_metrics_text()
