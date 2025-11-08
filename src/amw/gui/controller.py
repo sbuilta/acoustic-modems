@@ -8,6 +8,7 @@ from typing import Any
 from loguru import logger
 
 from amw.gui.main_window import MainWindow
+from amw.gui.panels.pipeline_panel import AudioState
 from amw.io.audio import AudioService
 from amw.io.payload import PayloadBuilder, PayloadSpec, PayloadType
 from amw.pipeline.conditioner import Conditioner
@@ -60,6 +61,7 @@ class WorkbenchController:
 
         self._refresh_audio_devices()
         self._load_plugins()
+        self._set_audio_state(AudioState.AVAILABLE)
 
     def _load_plugins(self) -> None:
         self._plugins = self._registry.all()
@@ -124,21 +126,28 @@ class WorkbenchController:
         self._notify_info(f"Build complete ({result.waveform.size} samples)")
 
     def _handle_transmit(self) -> None:
+        self._set_audio_state(AudioState.PLAYING)
         try:
             self._orchestrator.transmit()
         except Exception as exc:
             logger.exception("Transmit failed: %s", exc)
             self._notify_error(f"Transmit failed: {exc}")
             return
+        finally:
+            self._set_audio_state(AudioState.AVAILABLE)
         self._notify_info("Transmit complete")
 
     def _handle_record(self, *, use_trigger: bool) -> None:
+        state = AudioState.ARMED if use_trigger else AudioState.RECORDING
+        self._set_audio_state(state)
         try:
             result = self._orchestrator.record(duration=self._record_duration_s, use_trigger=use_trigger)
         except Exception as exc:
             logger.exception("Record failed: %s", exc)
             self._notify_error(f"Record failed: {exc}")
             return
+        finally:
+            self._set_audio_state(AudioState.AVAILABLE)
         self.window.debug_panel.update_constellation(result.samples, result.sample_rate)
         trigger_msg = " (trigger)" if use_trigger else ""
         self._notify_info(f"Recorded {result.samples.size} samples{trigger_msg}")
@@ -190,3 +199,7 @@ class WorkbenchController:
 
     def _notify_error(self, message: str) -> None:
         logger.error(message)
+
+    def _set_audio_state(self, state: AudioState) -> None:
+        """Proxy audio state updates to the pipeline panel indicator."""
+        self.window.pipeline_panel.set_audio_state(state)

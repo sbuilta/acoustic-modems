@@ -9,7 +9,8 @@ ensure_qt_module()
 
 pytest.importorskip("PySide6")
 
-from amw.gui.panels import AudioPanel, DebugPanel, ModemPanel, PayloadPanel, PipelinePanel  # noqa: E402
+from amw.gui.panels import AudioPanel, DebugPanel, ModemPanel, PayloadPanel  # noqa: E402
+from amw.gui.panels.pipeline_panel import AudioState, PipelinePanel  # noqa: E402
 
 
 def test_modem_panel_defaults(qt_app: object) -> None:
@@ -31,6 +32,14 @@ def test_audio_panel_defaults(qt_app: object) -> None:
 def test_pipeline_panel_buttons(qt_app: object) -> None:
     panel = PipelinePanel()
     assert panel.build_button.text() == "Build"
+
+
+def test_pipeline_panel_audio_state_indicator(qt_app: object) -> None:
+    panel = PipelinePanel()
+    assert panel.current_audio_state() == AudioState.AVAILABLE
+    panel.set_audio_state(AudioState.PLAYING)
+    assert panel.current_audio_state() == AudioState.PLAYING
+    assert panel.audio_state_summary().startswith("[*] Playing")
 
 
 def test_debug_panel_tabs(qt_app: object) -> None:
