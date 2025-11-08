@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 from tests._qt_stub import ensure_qt_module
@@ -35,3 +36,10 @@ def test_pipeline_panel_buttons(qt_app: object) -> None:
 def test_debug_panel_tabs(qt_app: object) -> None:
     panel = DebugPanel()
     assert panel.tabs.count() == 4
+
+
+def test_debug_panel_updates_constellation_status(qt_app: object) -> None:
+    panel = DebugPanel()
+    samples = np.linspace(-1.0, 1.0, num=32, dtype=np.float32)
+    panel.update_constellation(samples, 48_000)
+    assert "Showing" in panel.constellation.status_text()

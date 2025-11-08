@@ -139,6 +139,7 @@ class WorkbenchController:
             logger.exception("Record failed: %s", exc)
             self._notify_error(f"Record failed: {exc}")
             return
+        self.window.debug_panel.update_constellation(result.samples, result.sample_rate)
         trigger_msg = " (trigger)" if use_trigger else ""
         self._notify_info(f"Recorded {result.samples.size} samples{trigger_msg}")
 
