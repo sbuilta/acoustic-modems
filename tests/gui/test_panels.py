@@ -32,6 +32,8 @@ def test_audio_panel_defaults(qt_app: object) -> None:
 def test_pipeline_panel_buttons(qt_app: object) -> None:
     panel = PipelinePanel()
     assert panel.build_button.text() == "Build"
+    assert panel.stop_button.text() == "Stop"
+    assert panel.save_payload_button.text().startswith("Save")
 
 
 def test_pipeline_panel_audio_state_indicator(qt_app: object) -> None:

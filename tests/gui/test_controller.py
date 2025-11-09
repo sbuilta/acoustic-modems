@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 from types import SimpleNamespace
+from pathlib import Path
 
 import numpy as np
+import pytest
 
 import amw.gui.controller as controller_module
 
@@ -54,6 +56,7 @@ class DummyOrchestrator:
         self.build_calls = 0
         self.artifacts = PipelineArtifacts()
         self.state = PipelineState.IDLE
+        self.last_record_kwargs: dict[str, object] | None = None
 
     def configure(self, plugin_name: str, params: dict, payload_spec: object) -> None:
         self.configure_calls.append((plugin_name, params, payload_spec))
@@ -67,15 +70,33 @@ class DummyOrchestrator:
     def transmit(self, gain: float = 1.0) -> None:  # noqa: ARG002 - signature parity
         return
 
-    def record(self, duration: float, use_trigger: bool = False) -> RecordingResult:  # noqa: ARG002
+    def record(
+        self,
+        duration: float | None,
+        *,
+        use_trigger: bool = False,
+        stop_condition: object | None = None,
+        silence_timeout: float | None = None,
+        chunk_duration: float = 0.5,
+    ) -> RecordingResult:
+        self.last_record_kwargs = {
+            "duration": duration,
+            "use_trigger": use_trigger,
+            "stop_condition": stop_condition,
+            "silence_timeout": silence_timeout,
+            "chunk_duration": chunk_duration,
+        }
         samples = np.zeros(10, dtype=np.float32)
-        return RecordingResult(samples=samples, sample_rate=48_000, metadata={})
+        metadata = {"stop_reason": "completed"}
+        return RecordingResult(samples=samples, sample_rate=48_000, metadata=metadata)
 
     def condition(self) -> SimpleNamespace:
         return SimpleNamespace(waveform=np.zeros(2, dtype=np.float32))
 
     def decode(self) -> DecodeOutput:
-        return DecodeOutput(payload=b"ok", metrics={})
+        payload = b"ok"
+        self.artifacts.decoded_payload = payload
+        return DecodeOutput(payload=payload, metrics={})
 
 
 def test_controller_populates_modems_and_devices(qt_app: object) -> None:
@@ -128,3 +149,47 @@ def test_controller_flushes_qt_events_after_audio_state_update(qt_app: object, m
     controller._set_audio_state(AudioState.RECORDING)
 
     assert calls, "controller should process Qt events to refresh indicators"
+
+
+def test_record_invocation_supplies_stop_condition(qt_app: object) -> None:
+    window = MainWindow()
+    registry = DummyRegistry()
+    orchestrator = DummyOrchestrator()
+    WorkbenchController(window, registry=registry, audio_service=DummyAudioService(), orchestrator=orchestrator)
+
+    window.pipeline_panel.rx_now_button.click()
+
+    assert orchestrator.last_record_kwargs is not None
+    assert orchestrator.last_record_kwargs["stop_condition"] is not None
+    assert orchestrator.last_record_kwargs["silence_timeout"] == pytest.approx(2.0)
+
+
+def test_decode_enables_save_button(qt_app: object) -> None:
+    window = MainWindow()
+    registry = DummyRegistry()
+    WorkbenchController(window, registry=registry, audio_service=DummyAudioService(), orchestrator=DummyOrchestrator())
+
+    assert not window.pipeline_panel.save_payload_button.isEnabled()
+
+    window.pipeline_panel.decode_button.click()
+
+    assert window.pipeline_panel.save_payload_button.isEnabled()
+
+
+def test_save_payload_writes_file(qt_app: object, tmp_path: Path, monkeypatch: object) -> None:
+    window = MainWindow()
+    registry = DummyRegistry()
+    controller = WorkbenchController(window, registry=registry, audio_service=DummyAudioService(), orchestrator=DummyOrchestrator())
+
+    window.pipeline_panel.decode_button.click()
+
+    destination = tmp_path / "decoded.bin"
+
+    def fake_dialog(*_: object, **__: object) -> tuple[str, str]:
+        return str(destination), ""
+
+    monkeypatch.setattr(controller_module.QFileDialog, "getSaveFileName", staticmethod(fake_dialog))
+
+    window.pipeline_panel.save_payload_button.click()
+
+    assert destination.read_bytes() == b"ok"

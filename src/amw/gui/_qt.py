@@ -58,6 +58,7 @@ if _use_stub:
             self._layout: object | None = None
             self._visible = True
             self._object_name = ""
+            self._enabled = True
 
         def setLayout(self, layout: object | None) -> None:
             self._layout = layout
@@ -70,6 +71,12 @@ if _use_stub:
 
         def isVisible(self) -> bool:
             return self._visible
+
+        def setEnabled(self, enabled: bool) -> None:
+            self._enabled = enabled
+
+        def isEnabled(self) -> bool:
+            return self._enabled
 
         def setObjectName(self, name: str) -> None:
             self._object_name = name
@@ -355,6 +362,10 @@ if _use_stub:
     class QFileDialog:
         @staticmethod
         def getOpenFileName(*_: object, **__: object) -> tuple[str, str]:
+            return "", ""
+
+        @staticmethod
+        def getSaveFileName(*_: object, **__: object) -> tuple[str, str]:
             return "", ""
 
     class Qt:

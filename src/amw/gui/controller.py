@@ -7,11 +7,12 @@ from typing import Any
 
 from loguru import logger
 
-from amw.gui._qt import QApplication
+from amw.gui._qt import QApplication, QFileDialog
 from amw.gui.main_window import MainWindow
 from amw.gui.panels.pipeline_panel import AudioState
 from amw.io.audio import AudioService
 from amw.io.payload import PayloadBuilder, PayloadSpec, PayloadType
+from amw.io.payload_inspector import summarize_payload
 from amw.pipeline.conditioner import Conditioner
 from amw.pipeline.orchestrator import PipelineOrchestrator
 from amw.plugins.contract import PluginHandle
@@ -44,7 +45,10 @@ class WorkbenchController:
         )
         self._plugins: dict[str, PluginHandle] = {}
         self._current_plugin: PluginHandle | None = None
-        self._record_duration_s = 3.0
+        self._max_record_duration_s = 30.0
+        self._record_chunk_s = 0.5
+        self._silence_timeout_s = 2.0
+        self._record_stop_requested = False
         self._initialize_ui()
 
     def _initialize_ui(self) -> None:
@@ -59,6 +63,10 @@ class WorkbenchController:
         pipeline.rx_arm_button.clicked.connect(lambda: self._handle_record(use_trigger=True))
         pipeline.condition_button.clicked.connect(self._handle_condition)
         pipeline.decode_button.clicked.connect(self._handle_decode)
+        pipeline.stop_button.clicked.connect(self._request_record_stop)
+        pipeline.save_payload_button.clicked.connect(self._handle_save_payload)
+        pipeline.set_stop_enabled(False)
+        pipeline.set_save_payload_enabled(False)
 
         self._refresh_audio_devices()
         self._load_plugins()
@@ -124,6 +132,7 @@ class WorkbenchController:
             self._notify_error(f"Build failed: {exc}")
             return
 
+        self._set_payload_save_enabled(False)
         self._notify_info(f"Build complete ({result.waveform.size} samples)")
 
     def _handle_transmit(self) -> None:
@@ -144,14 +153,24 @@ class WorkbenchController:
 
     def _handle_record(self, *, use_trigger: bool) -> None:
         state = AudioState.ARMED if use_trigger else AudioState.RECORDING
+        self._record_stop_requested = False
+        self.window.pipeline_panel.set_stop_enabled(True)
         self._set_audio_state(state)
         try:
-            result = self._orchestrator.record(duration=self._record_duration_s, use_trigger=use_trigger)
+            result = self._orchestrator.record(
+                duration=self._max_record_duration_s,
+                use_trigger=use_trigger,
+                stop_condition=self._should_stop_recording,
+                silence_timeout=self._silence_timeout_s,
+                chunk_duration=self._record_chunk_s,
+            )
         except Exception as exc:
             logger.exception("Record failed: %s", exc)
             self._notify_error(f"Record failed: {exc}")
             return
         finally:
+            self.window.pipeline_panel.set_stop_enabled(False)
+            self._record_stop_requested = False
             self._set_audio_state(AudioState.AVAILABLE)
         self.window.debug_panel.record_receive(
             int(result.samples.size),
@@ -161,7 +180,8 @@ class WorkbenchController:
         )
         self.window.debug_panel.update_constellation(result.samples, result.sample_rate)
         trigger_msg = " (trigger)" if use_trigger else ""
-        self._notify_info(f"Recorded {result.samples.size} samples{trigger_msg}")
+        reason = result.metadata.get("stop_reason", "completed") if result.metadata else "completed"
+        self._notify_info(f"Recorded {result.samples.size} samples{trigger_msg}; stopped: {reason}")
 
     def _handle_condition(self) -> None:
         try:
@@ -179,12 +199,17 @@ class WorkbenchController:
             logger.exception("Decode failed: %s", exc)
             self.window.debug_panel.record_decode_attempt(success=False, error=str(exc))
             self._notify_error(f"Decode failed: {exc}")
+            self._set_payload_save_enabled(False)
             return
+        summary = summarize_payload(result.payload).as_dict()
+        metrics = dict(result.metrics or {})
+        metrics.update(summary)
         self.window.debug_panel.record_decode_attempt(
             success=True,
             payload_bytes=len(result.payload),
-            metrics=result.metrics,
+            metrics=metrics,
         )
+        self._set_payload_save_enabled(True)
         self._notify_info(f"Decoded payload ({len(result.payload)} bytes)")
 
     def _refresh_audio_devices(self) -> None:
@@ -218,6 +243,36 @@ class WorkbenchController:
     def _notify_error(self, message: str) -> None:
         logger.error(message)
         self.window.debug_panel.log_status("error", message)
+
+    def _handle_save_payload(self) -> None:
+        payload = self._orchestrator.artifacts.decoded_payload
+        if not payload:
+            self._notify_error("No decoded payload available to save. Run decode first.")
+            self._set_payload_save_enabled(False)
+            return
+        file_path, _ = QFileDialog.getSaveFileName(self.window, "Save decoded payload")
+        if not file_path:
+            return
+        destination = Path(file_path).expanduser()
+        try:
+            destination.write_bytes(payload)
+        except Exception as exc:
+            logger.exception("Failed to save decoded payload: %s", exc)
+            self._notify_error(f"Failed to save payload: {exc}")
+            return
+        self._notify_info(f"Saved decoded payload ({len(payload)} bytes) to '{destination}'")
+
+    def _request_record_stop(self) -> None:
+        """Flag the streaming recorder loop to exit on the next chunk."""
+        self._record_stop_requested = True
+
+    def _should_stop_recording(self) -> bool:
+        """Callback passed to the orchestrator; also pumps Qt events."""
+        self._flush_ui_events()
+        return self._record_stop_requested
+
+    def _set_payload_save_enabled(self, enabled: bool) -> None:
+        self.window.pipeline_panel.set_save_payload_enabled(enabled)
 
     def _set_audio_state(self, state: AudioState) -> None:
         """Proxy audio state updates to the pipeline panel indicator."""

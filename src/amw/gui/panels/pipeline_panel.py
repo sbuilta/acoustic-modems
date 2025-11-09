@@ -59,6 +59,10 @@ class PipelinePanel(QGroupBox):
         self.tx_button = QPushButton("Transmit")
         self.rx_now_button = QPushButton("Record Now")
         self.rx_arm_button = QPushButton("Arm Trigger")
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.setEnabled(False)
+        self.save_payload_button = QPushButton("Save Payload…")
+        self.save_payload_button.setEnabled(False)
         self.condition_button = QPushButton("Condition")
         self.decode_button = QPushButton("Decode")
         self._state_caption = QLabel("Audio state")
@@ -86,7 +90,17 @@ class PipelinePanel(QGroupBox):
         layout.addWidget(self.tx_button, 0, 1)
         layout.addWidget(self.rx_now_button, 1, 0)
         layout.addWidget(self.rx_arm_button, 1, 1)
-        layout.addWidget(self.condition_button, 2, 0)
-        layout.addWidget(self.decode_button, 2, 1)
-        layout.addWidget(self._state_caption, 3, 0)
-        layout.addWidget(self._audio_state_indicator, 3, 1)
+        layout.addWidget(self.stop_button, 2, 0)
+        layout.addWidget(self.save_payload_button, 2, 1)
+        layout.addWidget(self.condition_button, 3, 0)
+        layout.addWidget(self.decode_button, 3, 1)
+        layout.addWidget(self._state_caption, 4, 0)
+        layout.addWidget(self._audio_state_indicator, 4, 1)
+
+    def set_stop_enabled(self, enabled: bool) -> None:
+        """Toggle the stop button when long-running recordings are active."""
+        self.stop_button.setEnabled(enabled)
+
+    def set_save_payload_enabled(self, enabled: bool) -> None:
+        """Enable or disable the save payload action."""
+        self.save_payload_button.setEnabled(enabled)
